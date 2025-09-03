@@ -36,6 +36,7 @@ func (NetworkSecurityPerimeterDataSource) Arguments() map[string]*pluginsdk.Sche
 			Required:     true,
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
+
 		"resource_group_name": commonschema.ResourceGroupNameForDataSource(),
 	}
 }
@@ -71,7 +72,7 @@ func (NetworkSecurityPerimeterDataSource) Read() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			id := networksecurityperimeters.NewNetworkSecurityPerimeterID(subscriptionId, state.Name, state.ResourceGroupName)
+			id := networksecurityperimeters.NewNetworkSecurityPerimeterID(subscriptionId, state.ResourceGroupName, state.Name)
 
 			resp, err := client.Get(ctx, id)
 			if err != nil {
