@@ -64,7 +64,6 @@ func (NetworkSecurityPerimeterDataSource) Read() sdk.ResourceFunc {
 
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.Network.NetworkSecurityPerimetersClient
-
 			subscriptionId := metadata.Client.Account.SubscriptionId
 
 			var state NetworkSecurityPerimeterDataSourceModel
@@ -87,7 +86,7 @@ func (NetworkSecurityPerimeterDataSource) Read() sdk.ResourceFunc {
 
 			if model := resp.Model; model != nil {
 				state.Location = location.NormalizeNilable(pointer.To(model.Location))
-				state.Tags = pointer.From(model.Tags)
+				state.Tags = pointer.ToMapOfStringStrings(model.Tags)
 			}
 			return metadata.Encode(&state)
 		},

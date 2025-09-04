@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-azure-helpers/lang/response"
-	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonschema"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeterprofiles"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeters"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -22,8 +22,7 @@ type NetworkSecurityPerimeterProfileDataSource struct{}
 
 type NetworkSecurityPerimeterProfileDataSourceModel struct {
 	Name              string `tfschema:"name"`
-	ResourceGroupName string `tfschema:"resource_group_name"`
-	PerimeterName     string `tfschema:"perimeter_name"`
+	PerimeterId string `tfschema:"perimeter_id"`
 }
 
 func (NetworkSecurityPerimeterProfileDataSource) Arguments() map[string]*pluginsdk.Schema {
@@ -34,12 +33,11 @@ func (NetworkSecurityPerimeterProfileDataSource) Arguments() map[string]*plugins
 			ValidateFunc: validation.StringIsNotEmpty,
 		},
 
-		"resource_group_name": commonschema.ResourceGroupNameForDataSource(),
-
-		"perimeter_name": {
+		"perimeter_id": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringIsNotEmpty,
+			ForceNew:     true,
 		},
 	}
 }
@@ -70,8 +68,12 @@ func (NetworkSecurityPerimeterProfileDataSource) Read() sdk.ResourceFunc {
 			if err := metadata.Decode(&state); err != nil {
 				return fmt.Errorf("decoding: %+v", err)
 			}
+			nspId, err := networksecurityperimeters.ParseNetworkSecurityPerimeterID(state.PerimeterId)
+			if err != nil {
+				return err
+			}
 
-			id := networksecurityperimeterprofiles.NewProfileID(subscriptionId, state.ResourceGroupName, state.PerimeterName, state.Name)
+			id := networksecurityperimeterprofiles.NewProfileID(subscriptionId, nspId.ResourceGroupName, nspId.NetworkSecurityPerimeterName, state.Name)
 
 			resp, err := client.Get(ctx, id)
 			if err != nil {

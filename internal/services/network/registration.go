@@ -66,6 +66,7 @@ func (r Registration) Resources() []sdk.Resource {
 		ManagerVerifierWorkspaceResource{},
 		ManagerVerifierWorkspaceReachabilityAnalysisIntentResource{},
 		NetworkSecurityPerimeterResource{},
+		NetworkSecurityPerimeterProfileResource{},
 		PrivateEndpointApplicationSecurityGroupAssociationResource{},
 		RouteMapResource{},
 		VirtualHubRoutingIntentResource{},

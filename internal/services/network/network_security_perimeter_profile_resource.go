@@ -9,22 +9,20 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-azure-helpers/lang/response"
-	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonschema"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/NetworkSecurityPerimeterProfileprofiles"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeterprofiles"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeters"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
 )
 
-var _ sdk.Resource = NetworkSecurityPerimeterProfileProfileResource{}
+var _ sdk.Resource = NetworkSecurityPerimeterProfileResource{}
 
 type NetworkSecurityPerimeterProfileResource struct{}
 
 type NetworkSecurityPerimeterProfileResourceModel struct {
-	Name              string            `tfschema:"name"`
-	ResourceGroupName string            `tfschema:"resource_group_name"`
-	Location          string            `tfschema:"location"`
-	Tags              map[string]string `tfschema:"tags"`
+	Name        string `tfschema:"name"`
+	PerimeterId string `tfschema:"perimeter_id"`
 }
 
 func (NetworkSecurityPerimeterProfileResource) Arguments() map[string]*pluginsdk.Schema {
@@ -36,16 +34,12 @@ func (NetworkSecurityPerimeterProfileResource) Arguments() map[string]*pluginsdk
 			ForceNew:     true,
 		},
 
-		"resource_group_name": commonschema.ResourceGroupNameForDataSource(),
-
 		"perimeter_id": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringIsNotEmpty,
 			ForceNew:     true,
 		},
-
-		"tags": commonschema.Tags(),
 	}
 }
 
@@ -64,7 +58,7 @@ func (NetworkSecurityPerimeterProfileResource) ResourceType() string {
 func (r NetworkSecurityPerimeterProfileResource) Create() sdk.ResourceFunc {
 	return sdk.ResourceFunc{
 
-		Timeout: 30 * time.Minute,New
+		Timeout: 30 * time.Minute,
 
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.Network.NetworkSecurityPerimeterProfilesClient
@@ -75,7 +69,13 @@ func (r NetworkSecurityPerimeterProfileResource) Create() sdk.ResourceFunc {
 			if err := metadata.Decode(&config); err != nil {
 				return fmt.Errorf("decoding: %+v", err)
 			}
-			id := NetworkSecurityPerimeterProfiles.NewProfileID(subscriptionId, config.ResourceGroupName, config.Name)
+
+			nspId, err := networksecurityperimeters.ParseNetworkSecurityPerimeterID(config.PerimeterId)
+			if err != nil {
+				return err
+			}
+
+			id := networksecurityperimeterprofiles.NewProfileID(subscriptionId, nspId.ResourceGroupName, nspId.NetworkSecurityPerimeterName, config.Name)
 
 			existing, err := client.Get(ctx, id)
 			if err != nil && !response.WasNotFound(existing.HttpResponse) {
@@ -85,10 +85,8 @@ func (r NetworkSecurityPerimeterProfileResource) Create() sdk.ResourceFunc {
 				return metadata.ResourceRequiresImport(r.ResourceType(), id)
 			}
 
-			param := NetworkSecurityPerimeterProfiles.NetworkSecurityPerimeterProfile{
-				Location: location.Normalize(config.Location),
-				Tags:     pointer.To(config.Tags),
-			}
+			param := networksecurityperimeterprofiles.NspProfile{}
+
 			if _, err := client.CreateOrUpdate(ctx, id, param); err != nil {
 				return fmt.Errorf("creating %s: %+v", id, err)
 			}
@@ -106,7 +104,7 @@ func (r NetworkSecurityPerimeterProfileResource) Update() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.Network.NetworkSecurityPerimeterProfilesClient
 
-			id, err := NetworkSecurityPerimeterProfiles.ParseNetworkSecurityPerimeterProfileID(metadata.ResourceData.Id())
+			id, err := networksecurityperimeterprofiles.ParseProfileID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -115,10 +113,7 @@ func (r NetworkSecurityPerimeterProfileResource) Update() sdk.ResourceFunc {
 			if err := metadata.Decode(&config); err != nil {
 				return fmt.Errorf("decoding: %+v", err)
 			}
-			param := NetworkSecurityPerimeterProfiles.NetworkSecurityPerimeterProfile{
-				Location: location.Normalize(config.Location),
-				Tags:     pointer.To(config.Tags),
-			}
+			param := networksecurityperimeterprofiles.NspProfile{}
 			if _, err := client.CreateOrUpdate(ctx, *id, param); err != nil {
 				return fmt.Errorf("updating %s: %+v", id, err)
 			}
@@ -135,7 +130,7 @@ func (NetworkSecurityPerimeterProfileResource) Read() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.Network.NetworkSecurityPerimeterProfilesClient
 
-			id, err := NetworkSecurityPerimeterProfiles.ParseNetworkSecurityPerimeterProfileID(metadata.ResourceData.Id())
+			id, err := networksecurityperimeterprofiles.ParseProfileID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
@@ -150,12 +145,9 @@ func (NetworkSecurityPerimeterProfileResource) Read() sdk.ResourceFunc {
 			}
 
 			state := NetworkSecurityPerimeterProfileResourceModel{
-				Name: id.NetworkSecurityPerimeterProfileName,
+				Name: id.ProfileName,
 			}
-			if model := resp.Model; model != nil {
-				state.Location = location.Normalize(model.Location)
-				state.Tags = pointer.From(model.Tags)
-			}
+
 			return metadata.Encode(&state)
 		},
 	}
@@ -168,12 +160,12 @@ func (NetworkSecurityPerimeterProfileResource) Delete() sdk.ResourceFunc {
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
 			client := metadata.Client.Network.NetworkSecurityPerimeterProfilesClient
 
-			id, err := NetworkSecurityPerimeterProfiles.ParseNetworkSecurityPerimeterProfileID(metadata.ResourceData.Id())
+			id, err := networksecurityperimeterprofiles.ParseProfileID(metadata.ResourceData.Id())
 			if err != nil {
 				return err
 			}
 
-			if err := client.DeleteThenPoll(ctx, *id, NetworkSecurityPerimeterProfiles.DefaultDeleteOperationOptions()); err != nil {
+			if _, err := client.Delete(ctx, *id); err != nil {
 				return fmt.Errorf("deleting %s: %+v", *id, err)
 			}
 			return nil
@@ -182,5 +174,5 @@ func (NetworkSecurityPerimeterProfileResource) Delete() sdk.ResourceFunc {
 }
 
 func (NetworkSecurityPerimeterProfileResource) IDValidationFunc() pluginsdk.SchemaValidateFunc {
-	return NetworkSecurityPerimeterProfiles.ValidateNetworkSecurityPerimeterProfileID
+	return networksecurityperimeterprofiles.ValidateProfileID
 }
