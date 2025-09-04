@@ -48,8 +48,8 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 		},
 
 		"direction": {
-			Type: pluginsdk.TypeString,
-			Required:     true,
+			Type:     pluginsdk.TypeString,
+			Required: true,
 		},
 
 		"address_prefixes": {

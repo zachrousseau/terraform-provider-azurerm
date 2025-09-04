@@ -21,7 +21,7 @@ var _ sdk.DataSource = NetworkSecurityPerimeterProfileDataSource{}
 type NetworkSecurityPerimeterProfileDataSource struct{}
 
 type NetworkSecurityPerimeterProfileDataSourceModel struct {
-	Name              string `tfschema:"name"`
+	Name        string `tfschema:"name"`
 	PerimeterId string `tfschema:"perimeter_id"`
 }
 
