@@ -48,8 +48,8 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 		},
 
 		"direction": {
-			Type: pluginsdk.TypeString,
-			Required:     true,
+			Type:     pluginsdk.TypeString,
+			Required: true,
 		},
 
 		"address_prefixes": {
@@ -57,6 +57,8 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
 			},
+			Required:     false,
+			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
 
 		"fqdns": {
@@ -64,6 +66,9 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
 			},
+			Required: false,
+
+			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
 
 		"subscription_ids": {
@@ -71,6 +76,8 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
 			},
+			Required:     false,
+			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
 	}
 }
