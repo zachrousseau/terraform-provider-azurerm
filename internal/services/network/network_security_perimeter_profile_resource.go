@@ -97,32 +97,6 @@ func (r NetworkSecurityPerimeterProfileResource) Create() sdk.ResourceFunc {
 	}
 }
 
-func (r NetworkSecurityPerimeterProfileResource) Update() sdk.ResourceFunc {
-	return sdk.ResourceFunc{
-		Timeout: 30 * time.Minute,
-
-		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
-			client := metadata.Client.Network.NetworkSecurityPerimeterProfilesClient
-
-			id, err := networksecurityperimeterprofiles.ParseProfileID(metadata.ResourceData.Id())
-			if err != nil {
-				return err
-			}
-
-			var config NetworkSecurityPerimeterProfileResourceModel
-			if err := metadata.Decode(&config); err != nil {
-				return fmt.Errorf("decoding: %+v", err)
-			}
-			param := networksecurityperimeterprofiles.NspProfile{}
-			if _, err := client.CreateOrUpdate(ctx, *id, param); err != nil {
-				return fmt.Errorf("updating %s: %+v", id, err)
-			}
-
-			return nil
-		},
-	}
-}
-
 func (NetworkSecurityPerimeterProfileResource) Read() sdk.ResourceFunc {
 	return sdk.ResourceFunc{
 		Timeout: 5 * time.Minute,
