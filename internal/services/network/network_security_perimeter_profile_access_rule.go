@@ -50,6 +50,10 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 		"direction": {
 			Type:     pluginsdk.TypeString,
 			Required: true,
+			ValidateFunc: validation.StringInSlice(
+				networksecurityperimeteraccessrules.PossibleValuesForAccessRuleDirection(),
+				false,
+			),
 		},
 
 		"address_prefixes": {
@@ -57,7 +61,7 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
 			},
-			Required:     false,
+			Optional:     true,
 			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
 
@@ -66,7 +70,7 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
 			},
-			Required: false,
+			Optional: true,
 
 			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
@@ -76,7 +80,7 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
 			},
-			Required:     false,
+			Optional:     true,
 			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
 	}
@@ -109,9 +113,9 @@ func (r NetworkSecurityPerimeterAccessRuleResource) Create() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			profileId, err := networksecurityperimeterprofiles.ParseProfileID(metadata.ResourceData.Id())
+			profileId, err := networksecurityperimeterprofiles.ParseProfileID(config.ProfileId)
 			if err != nil {
-				return err
+				return fmt.Errorf("parsing profile ID: %+v", err)
 			}
 			nspId := networksecurityperimeters.NewNetworkSecurityPerimeterID(profileId.SubscriptionId, profileId.ResourceGroupName, profileId.NetworkSecurityPerimeterName)
 

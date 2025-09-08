@@ -152,7 +152,8 @@ func (NetworkSecurityPerimeterResource) Read() sdk.ResourceFunc {
 			}
 
 			state := NetworkSecurityPerimeterResourceModel{
-				Name: id.NetworkSecurityPerimeterName,
+				Name:              id.NetworkSecurityPerimeterName,
+				ResourceGroupName: id.ResourceGroupName,
 			}
 			if model := resp.Model; model != nil {
 				state.Location = location.Normalize(model.Location)
