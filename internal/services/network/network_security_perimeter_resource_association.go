@@ -12,10 +12,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/lang/response"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeterassociations"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeterprofiles"
-
-	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeters"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeterassociations"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeterprofiles"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeters"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
