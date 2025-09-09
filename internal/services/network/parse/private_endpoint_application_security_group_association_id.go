@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/resourceids"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/applicationsecuritygroups"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/privateendpoints"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/applicationsecuritygroups"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/privateendpoints"
 )
 
 var _ resourceids.Id = PrivateEndpointApplicationSecurityGroupAssociationId{}
