@@ -84,6 +84,8 @@ func NewClient(o *common.ClientOptions) (*Client, error) {
 	return &Client{
 		BastionHostsClient:                     BastionHostsClient,
 		NetworkInterfacesClient:                NetworkInterfacesClient,
+		NetworkSecurityPerimeterAccessRulesClient: NetworkSecurityPerimeterAccessRulesClient,
+		NetworkSecurityPerimeterAssociationsClient: NetworkSecurityPerimeterAssociationsClient,
 		NetworkSecurityPerimeterProfilesClient: NetworkSecurityPerimeterProfilesClient,
 		NetworkSecurityPerimetersClient:        NetworkSecurityPerimetersClient,
 		VMSSPublicIPAddressesClient:            VMSSPublicIPAddressesClient,
