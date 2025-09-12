@@ -9,11 +9,11 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2023-09-01/networkinterfaces"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2023-09-01/vmsspublicipaddresses"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-01-01/bastionhosts"
+	network_2024_10_01 "github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeteraccessrules"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeterassociations"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeterprofiles"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeters"
-	network_2024_10_01 "github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01"
 	"github.com/hashicorp/go-azure-sdk/sdk/client/resourcemanager"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/common"
 )
@@ -82,13 +82,13 @@ func NewClient(o *common.ClientOptions) (*Client, error) {
 	}
 
 	return &Client{
-		BastionHostsClient:                     BastionHostsClient,
-		NetworkInterfacesClient:                NetworkInterfacesClient,
-		NetworkSecurityPerimeterAccessRulesClient: NetworkSecurityPerimeterAccessRulesClient,
+		BastionHostsClient:                         BastionHostsClient,
+		NetworkInterfacesClient:                    NetworkInterfacesClient,
+		NetworkSecurityPerimeterAccessRulesClient:  NetworkSecurityPerimeterAccessRulesClient,
 		NetworkSecurityPerimeterAssociationsClient: NetworkSecurityPerimeterAssociationsClient,
-		NetworkSecurityPerimeterProfilesClient: NetworkSecurityPerimeterProfilesClient,
-		NetworkSecurityPerimetersClient:        NetworkSecurityPerimetersClient,
-		VMSSPublicIPAddressesClient:            VMSSPublicIPAddressesClient,
-		Client:                                 client,
+		NetworkSecurityPerimeterProfilesClient:     NetworkSecurityPerimeterProfilesClient,
+		NetworkSecurityPerimetersClient:            NetworkSecurityPerimetersClient,
+		VMSSPublicIPAddressesClient:                VMSSPublicIPAddressesClient,
+		Client:                                     client,
 	}, nil
 }

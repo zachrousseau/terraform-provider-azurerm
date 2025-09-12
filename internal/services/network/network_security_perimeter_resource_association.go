@@ -6,7 +6,6 @@ package network
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +14,7 @@ import (
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeterassociations"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeterprofiles"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeters"
+	"github.com/hashicorp/terraform-provider-azurerm/helpers/azure"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -35,20 +35,23 @@ func (NetworkSecurityPerimeterAssociationResource) Arguments() map[string]*plugi
 		"resource_id": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: azure.ValidateResourceID,
 			ForceNew:     true,
 		},
 
 		"profile_id": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: networksecurityperimeterprofiles.ValidateProfileID,
 		},
 
 		"access_mode": {
-			Type:         pluginsdk.TypeString,
-			Required:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			Type:     pluginsdk.TypeString,
+			Required: true,
+			ValidateFunc: validation.StringInSlice(
+				networksecurityperimeterassociations.PossibleValuesForAssociationAccessMode(),
+				false,
+			),
 		},
 	}
 }
@@ -79,17 +82,25 @@ func (r NetworkSecurityPerimeterAssociationResource) Create() sdk.ResourceFunc {
 				return fmt.Errorf("decoding: %+v", err)
 			}
 
-			profileId, err := networksecurityperimeterprofiles.ParseProfileID(metadata.ResourceData.Id())
+			profileId, err := networksecurityperimeterprofiles.ParseProfileID(config.ProfileId)
 			if err != nil {
 				return err
 			}
 
 			nspId := networksecurityperimeters.NewNetworkSecurityPerimeterID(profileId.SubscriptionId, profileId.ResourceGroupName, profileId.NetworkSecurityPerimeterName)
 
-			ResourceIdComponents := strings.Split(config.ResourceId, "/")
-			ResourceName := ResourceIdComponents[len(ResourceIdComponents)-1] + "-" + uuid.New().String()
+			resourceId, err := azure.ParseAzureResourceID(config.ResourceId)
+			if err != nil {
+				return fmt.Errorf("parsing resource ID: %+v", err)
+			}
 
-			id := networksecurityperimeterassociations.NewResourceAssociationID(subscriptionId, nspId.ResourceGroupName, nspId.NetworkSecurityPerimeterName, ResourceName)
+			var resourceName string
+			for _, v := range resourceId.Path {
+				resourceName = v
+			}
+			resourceAssociationName := resourceName + "-" + uuid.New().String()
+
+			id := networksecurityperimeterassociations.NewResourceAssociationID(subscriptionId, nspId.ResourceGroupName, nspId.NetworkSecurityPerimeterName, resourceAssociationName)
 
 			existing, err := client.Get(ctx, id)
 			if err != nil && !response.WasNotFound(existing.HttpResponse) {
@@ -99,7 +110,17 @@ func (r NetworkSecurityPerimeterAssociationResource) Create() sdk.ResourceFunc {
 				return metadata.ResourceRequiresImport(r.ResourceType(), id)
 			}
 
-			param := networksecurityperimeterassociations.NspAssociation{}
+			param := networksecurityperimeterassociations.NspAssociation{
+				Properties: &networksecurityperimeterassociations.NspAssociationProperties{
+					Profile: &networksecurityperimeterassociations.SubResource{
+						Id: pointer.To(profileId.ID()),
+					},
+					PrivateLinkResource: &networksecurityperimeterassociations.SubResource{
+						Id: pointer.To(config.ResourceId),
+					},
+					AccessMode: pointer.To(networksecurityperimeterassociations.AssociationAccessMode(config.AccessMode)),
+				},
+			}
 
 			if _, err := client.CreateOrUpdate(ctx, id, param); err != nil {
 				return fmt.Errorf("creating %s: %+v", id, err)
@@ -127,7 +148,39 @@ func (r NetworkSecurityPerimeterAssociationResource) Update() sdk.ResourceFunc {
 			if err := metadata.Decode(&config); err != nil {
 				return fmt.Errorf("decoding: %+v", err)
 			}
-			param := networksecurityperimeterassociations.NspAssociation{}
+
+			existing, err := client.Get(ctx, *id)
+			if err != nil {
+				return fmt.Errorf("retrieving %s: %+v", *id, err)
+			}
+
+			if existing.Model == nil {
+				return fmt.Errorf("retrieving %s: `model` was nil", id)
+			}
+			if existing.Model.Properties == nil {
+				return fmt.Errorf("retrieving %s: `properties` was nil", id)
+			}
+
+			if metadata.ResourceData.HasChange("profile_id") {
+				existing.Model.Properties.Profile = &networksecurityperimeterassociations.SubResource{
+					Id: pointer.To(config.ProfileId),
+				}
+			}
+			if metadata.ResourceData.HasChange("resource_id") {
+
+				existing.Model.Properties.PrivateLinkResource = &networksecurityperimeterassociations.SubResource{
+					Id: pointer.To(config.ResourceId),
+				}
+
+			}
+			if metadata.ResourceData.HasChange("access_mode") {
+				existing.Model.Properties.AccessMode = pointer.To(networksecurityperimeterassociations.AssociationAccessMode(config.AccessMode))
+
+			}
+
+			param := networksecurityperimeterassociations.NspAssociation{
+				Properties: existing.Model.Properties,
+			}
 			if _, err := client.CreateOrUpdate(ctx, *id, param); err != nil {
 				return fmt.Errorf("updating %s: %+v", id, err)
 			}

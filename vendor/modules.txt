@@ -768,6 +768,8 @@ github.com/hashicorp/go-azure-sdk/resource-manager/network/2023-11-01/virtualnet
 github.com/hashicorp/go-azure-sdk/resource-manager/network/2023-11-01/virtualwans
 github.com/hashicorp/go-azure-sdk/resource-manager/network/2023-11-01/webapplicationfirewallpolicies
 github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-01-01/bastionhosts
+github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeterprofiles
+github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeters
 github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01
 github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/adminrulecollections
 github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/adminrules

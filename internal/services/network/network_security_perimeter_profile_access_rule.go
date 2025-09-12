@@ -10,9 +10,10 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/lang/response"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeteraccessrules"
+	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonids"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeterprofiles"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-07-01/networksecurityperimeters"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeteraccessrules"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -43,7 +44,7 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 		"profile_id": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
-			ValidateFunc: validation.StringIsNotEmpty,
+			ValidateFunc: networksecurityperimeteraccessrules.ValidateProfileID,
 			ForceNew:     true,
 		},
 
@@ -54,14 +55,17 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 				networksecurityperimeteraccessrules.PossibleValuesForAccessRuleDirection(),
 				false,
 			),
+			ForceNew: true,
 		},
 
 		"address_prefixes": {
 			Type: pluginsdk.TypeList,
 			Elem: &pluginsdk.Schema{
-				Type: pluginsdk.TypeString,
+				Type:         pluginsdk.TypeString,
+				ValidateFunc: validation.IsCIDR,
 			},
 			Optional:     true,
+			MinItems:     1,
 			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
 
@@ -70,17 +74,19 @@ func (NetworkSecurityPerimeterAccessRuleResource) Arguments() map[string]*plugin
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
 			},
-			Optional: true,
-
+			Optional:     true,
+			MinItems:     1,
 			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
 
 		"subscription_ids": {
 			Type: pluginsdk.TypeList,
 			Elem: &pluginsdk.Schema{
-				Type: pluginsdk.TypeString,
+				Type:         pluginsdk.TypeString,
+				ValidateFunc: commonids.ValidateSubscriptionID,
 			},
 			Optional:     true,
+			MinItems:     1,
 			ExactlyOneOf: []string{"address_prefixes", "fqdns", "subscription_ids"},
 		},
 	}
@@ -96,6 +102,30 @@ func (NetworkSecurityPerimeterAccessRuleResource) ModelObject() interface{} {
 
 func (NetworkSecurityPerimeterAccessRuleResource) ResourceType() string {
 	return "azurerm_network_security_access_rule"
+}
+
+func (r NetworkSecurityPerimeterAccessRuleResource) CustomizeDiff() sdk.ResourceFunc {
+	return sdk.ResourceFunc{
+		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
+			rd := metadata.ResourceDiff
+			direction := rd.Get("direction").(string)
+
+			if direction == string(networksecurityperimeteraccessrules.AccessRuleDirectionOutbound) && rd.HasChange("address_prefixes") {
+				return fmt.Errorf("`address_prefixes` can only be set when `direction` is Inbound")
+			}
+
+			if direction == string(networksecurityperimeteraccessrules.AccessRuleDirectionOutbound) && rd.HasChange("subscription_id") {
+				return fmt.Errorf("`subscription_ids` can only be set when `direction` is Inbound")
+			}
+
+			if direction == string(networksecurityperimeteraccessrules.AccessRuleDirectionInbound) && rd.HasChange("fqdns") {
+				return fmt.Errorf("`fqdns` cannot be specified when `direction` is Outbound")
+			}
+
+			return nil
+		},
+		Timeout: 30 * time.Minute,
+	}
 }
 
 func (r NetworkSecurityPerimeterAccessRuleResource) Create() sdk.ResourceFunc {
@@ -129,7 +159,22 @@ func (r NetworkSecurityPerimeterAccessRuleResource) Create() sdk.ResourceFunc {
 				return metadata.ResourceRequiresImport(r.ResourceType(), id)
 			}
 
-			param := networksecurityperimeteraccessrules.NspAccessRule{}
+			direction := networksecurityperimeteraccessrules.AccessRuleDirection(config.Direction)
+
+			subscriptions := make([]networksecurityperimeteraccessrules.SubscriptionId, len(config.Subscriptions))
+			for i, s := range config.Subscriptions {
+				subscriptions[i] = networksecurityperimeteraccessrules.SubscriptionId{
+					Id: pointer.To(s),
+				}
+			}
+			param := networksecurityperimeteraccessrules.NspAccessRule{
+				Properties: &networksecurityperimeteraccessrules.NspAccessRuleProperties{
+					Direction:                 &direction,
+					AddressPrefixes:           pointer.To(config.AddressPrefixes),
+					FullyQualifiedDomainNames: pointer.To(config.FullyQualifiedDomainNames),
+					Subscriptions:             &subscriptions,
+				},
+			}
 
 			if _, err := client.CreateOrUpdate(ctx, id, param); err != nil {
 				return fmt.Errorf("creating %s: %+v", id, err)
