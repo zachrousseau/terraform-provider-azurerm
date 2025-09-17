@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/network/2024-10-01/networksecurityperimeterassociations"
@@ -25,6 +24,7 @@ var _ sdk.Resource = NetworkSecurityPerimeterAssociationResource{}
 type NetworkSecurityPerimeterAssociationResource struct{}
 
 type NetworkSecurityPerimeterAssociationResourceModel struct {
+	Name       string `tfschema:"name"`
 	ProfileId  string `tfschema:"profile_id"`
 	ResourceId string `tfschema:"resource_id"`
 	AccessMode string `tfschema:"access_mode"`
@@ -32,6 +32,13 @@ type NetworkSecurityPerimeterAssociationResourceModel struct {
 
 func (NetworkSecurityPerimeterAssociationResource) Arguments() map[string]*pluginsdk.Schema {
 	return map[string]*pluginsdk.Schema{
+		"name": {
+			Type:         pluginsdk.TypeString,
+			Required:     true,
+			ValidateFunc: validation.StringIsNotEmpty,
+			ForceNew:     true,
+		},
+
 		"resource_id": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
@@ -42,6 +49,7 @@ func (NetworkSecurityPerimeterAssociationResource) Arguments() map[string]*plugi
 		"profile_id": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
+			ForceNew: true,
 			ValidateFunc: networksecurityperimeterprofiles.ValidateProfileID,
 		},
 
@@ -65,7 +73,7 @@ func (NetworkSecurityPerimeterAssociationResource) ModelObject() interface{} {
 }
 
 func (NetworkSecurityPerimeterAssociationResource) ResourceType() string {
-	return "azurerm_network_security_perimeter_resource_association"
+	return "azurerm_network_security_perimeter_association"
 }
 
 func (r NetworkSecurityPerimeterAssociationResource) Create() sdk.ResourceFunc {
@@ -89,18 +97,7 @@ func (r NetworkSecurityPerimeterAssociationResource) Create() sdk.ResourceFunc {
 
 			nspId := networksecurityperimeters.NewNetworkSecurityPerimeterID(profileId.SubscriptionId, profileId.ResourceGroupName, profileId.NetworkSecurityPerimeterName)
 
-			resourceId, err := azure.ParseAzureResourceID(config.ResourceId)
-			if err != nil {
-				return fmt.Errorf("parsing resource ID: %+v", err)
-			}
-
-			var resourceName string
-			for _, v := range resourceId.Path {
-				resourceName = v
-			}
-			resourceAssociationName := resourceName + "-" + uuid.New().String()
-
-			id := networksecurityperimeterassociations.NewResourceAssociationID(subscriptionId, nspId.ResourceGroupName, nspId.NetworkSecurityPerimeterName, resourceAssociationName)
+			id := networksecurityperimeterassociations.NewResourceAssociationID(subscriptionId, nspId.ResourceGroupName, nspId.NetworkSecurityPerimeterName, config.Name)
 
 			existing, err := client.Get(ctx, id)
 			if err != nil && !response.WasNotFound(existing.HttpResponse) {
@@ -211,7 +208,9 @@ func (NetworkSecurityPerimeterAssociationResource) Read() sdk.ResourceFunc {
 				return fmt.Errorf("retrieving %s: %+v", id, err)
 			}
 
+
 			state := NetworkSecurityPerimeterAssociationResourceModel{
+				Name: id.ResourceAssociationName,
 				ProfileId:  pointer.From(resp.Model.Properties.Profile.Id),
 				ResourceId: pointer.From(resp.Model.Properties.PrivateLinkResource.Id),
 				AccessMode: string(pointer.From(resp.Model.Properties.AccessMode)),

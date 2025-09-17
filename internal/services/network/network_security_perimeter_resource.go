@@ -117,12 +117,16 @@ func (r NetworkSecurityPerimeterResource) Update() sdk.ResourceFunc {
 			if err := metadata.Decode(&config); err != nil {
 				return fmt.Errorf("decoding: %+v", err)
 			}
-			param := networksecurityperimeters.NetworkSecurityPerimeter{
-				Location: location.Normalize(config.Location),
-				Tags:     pointer.To(config.Tags),
-			}
-			if _, err := client.CreateOrUpdate(ctx, *id, param); err != nil {
-				return fmt.Errorf("updating %s: %+v", id, err)
+
+			if metadata.ResourceData.HasChange("tags") {
+				tagReq := networksecurityperimeters.UpdateTagsRequest{
+					Id:   pointer.To(id.ID()),
+					Tags: pointer.To(config.Tags),
+				}
+
+				if _, err := client.Patch(ctx, *id, tagReq); err != nil {
+					return fmt.Errorf("updating tags for %s: %+v", id, err)
+				}
 			}
 
 			return nil

@@ -37,7 +37,6 @@ func (NetworkSecurityPerimeterProfileDataSource) Arguments() map[string]*plugins
 			Type:         pluginsdk.TypeString,
 			Required:     true,
 			ValidateFunc: networksecurityperimeterprofiles.ValidateNetworkSecurityPerimeterID,
-			ForceNew:     true,
 		},
 	}
 }

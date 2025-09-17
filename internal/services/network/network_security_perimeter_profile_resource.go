@@ -118,7 +118,7 @@ func (NetworkSecurityPerimeterProfileResource) Read() sdk.ResourceFunc {
 				return fmt.Errorf("retrieving %s: %+v", id, err)
 			}
 
-			perimeterId := networksecurityperimeters.NewNetworkSecurityPerimeterID(id.SubscriptionId, id.NetworkSecurityPerimeterName, id.ResourceGroupName)
+			perimeterId := networksecurityperimeters.NewNetworkSecurityPerimeterID(id.SubscriptionId, id.ResourceGroupName, id.NetworkSecurityPerimeterName)
 
 			state := NetworkSecurityPerimeterProfileResourceModel{
 				Name:        id.ProfileName,

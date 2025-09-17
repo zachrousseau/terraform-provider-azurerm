@@ -101,7 +101,7 @@ func (NetworkSecurityPerimeterAccessRuleResource) ModelObject() interface{} {
 }
 
 func (NetworkSecurityPerimeterAccessRuleResource) ResourceType() string {
-	return "azurerm_network_security_access_rule"
+	return "azurerm_network_security_perimeter_access_rule"
 }
 
 func (r NetworkSecurityPerimeterAccessRuleResource) CustomizeDiff() sdk.ResourceFunc {
