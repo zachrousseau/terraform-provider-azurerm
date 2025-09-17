@@ -236,27 +236,34 @@ func (NetworkSecurityPerimeterAssociationResource) Delete() sdk.ResourceFunc {
 				return fmt.Errorf("deleting %s: %+v", *id, err)
 			}
 
-			stateConf := &pluginsdk.StateChangeConf{
-			Pending:    []string{"Present"},
-			Target:     []string{"Deleted"},
-			Refresh: func() (interface{}, string, error) {
-				resp, err := client.Get(ctx, *id)
-				if err != nil {
-					if response.WasNotFound(resp.HttpResponse) {
-						return nil, "Deleted", nil
-					}
-					return nil, "Present", err
-				}
-				return resp, "Present", nil
-			},
-			Timeout:    10 * time.Minute,
-			MinTimeout: 10 * time.Second,
-		}
+			time.Sleep(5 * time.Second)
 
-		_, err = stateConf.WaitForStateContext(ctx)
-		if err != nil {
-			return fmt.Errorf("waiting for %s to be deleted: %+v", *id, err)
-		}
+			// stateConf := &pluginsdk.StateChangeConf{
+			// 	Pending: []string{"Present"},
+			// 	Target:  []string{"Deleted"},
+			// 	Refresh: func() (interface{}, string, error) {
+			// 		resp, err := client.Get(ctx, *id)
+			// 		if err != nil {
+			// 			if resp.HttpResponse == nil {
+			// 				return nil, "Present", err
+			// 			}
+
+			// 			if response.WasNotFound(resp.HttpResponse) || response.WasNotFound(resp.HttpResponse) {
+			// 				return nil, "Deleted", nil
+			// 			}
+			// 			return nil, "Present", err
+			// 		}
+			// 		return resp, "Present", nil
+			// 	},
+
+			// 	Timeout:    15 * time.Minute,
+			// 	MinTimeout: 15 * time.Second,
+			// }
+
+			// _, err = stateConf.WaitForStateContext(ctx)
+			// if err != nil {
+			// 	return fmt.Errorf("waiting for %s to be deleted: %+v", *id, err)
+			// }
 			return nil
 		},
 	}

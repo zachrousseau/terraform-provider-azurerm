@@ -124,7 +124,7 @@ func (r NetworkSecurityPerimeterProfileTestResource) requiresImport(data accepta
 	return fmt.Sprintf(`
 %s
 
-resource "azurerm_network_security_perimeter_profile" "test" {
+resource "azurerm_network_security_perimeter_profile" "import" {
 	name = azurerm_network_security_perimeter_profile.test.name
 	perimeter_id = azurerm_network_security_perimeter_profile.test.perimeter_id
 }
