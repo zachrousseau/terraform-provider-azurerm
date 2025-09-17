@@ -49,7 +49,7 @@ func (NetworkSecurityPerimeterAssociationResource) Arguments() map[string]*plugi
 		"profile_id": {
 			Type:         pluginsdk.TypeString,
 			Required:     true,
-			ForceNew: true,
+			ForceNew:     true,
 			ValidateFunc: networksecurityperimeterprofiles.ValidateProfileID,
 		},
 
@@ -208,9 +208,8 @@ func (NetworkSecurityPerimeterAssociationResource) Read() sdk.ResourceFunc {
 				return fmt.Errorf("retrieving %s: %+v", id, err)
 			}
 
-
 			state := NetworkSecurityPerimeterAssociationResourceModel{
-				Name: id.ResourceAssociationName,
+				Name:       id.ResourceAssociationName,
 				ProfileId:  pointer.From(resp.Model.Properties.Profile.Id),
 				ResourceId: pointer.From(resp.Model.Properties.PrivateLinkResource.Id),
 				AccessMode: string(pointer.From(resp.Model.Properties.AccessMode)),
@@ -236,6 +235,28 @@ func (NetworkSecurityPerimeterAssociationResource) Delete() sdk.ResourceFunc {
 			if _, err := client.Delete(ctx, *id); err != nil {
 				return fmt.Errorf("deleting %s: %+v", *id, err)
 			}
+
+			stateConf := &pluginsdk.StateChangeConf{
+			Pending:    []string{"Present"},
+			Target:     []string{"Deleted"},
+			Refresh: func() (interface{}, string, error) {
+				resp, err := client.Get(ctx, *id)
+				if err != nil {
+					if response.WasNotFound(resp.HttpResponse) {
+						return nil, "Deleted", nil
+					}
+					return nil, "Present", err
+				}
+				return resp, "Present", nil
+			},
+			Timeout:    10 * time.Minute,
+			MinTimeout: 10 * time.Second,
+		}
+
+		_, err = stateConf.WaitForStateContext(ctx)
+		if err != nil {
+			return fmt.Errorf("waiting for %s to be deleted: %+v", *id, err)
+		}
 			return nil
 		},
 	}
